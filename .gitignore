@@ -1,0 +1,102 @@
+# Chef
+.chef/*.pem
+.chef/encrypted_data_bag_secret
+
+# Ruby
+.rake_test_cache
+.rvmrc
+.rbenv-version
+
+# Emacs
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+.elc
+auto-save-list
+tramp
+.\#*
+
+# Emacs org-mode
+.org-id-locations
+*_archive
+
+# SublimeText
+*.sublime-workspace
+
+# TextMate
+*.tmproj
+*.tmproject
+tmtags
+
+# Vim
+.*.s[a-w][a-z]
+*.un~
+Session.vim
+.netrwhist
+*~
+
+# OS X
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+.Spotlight-V100
+.Trashes
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Custom
+*.py[cod]
+.idea/*
+*.iml
+*.7z
+*.dmg
+*.gz
+*.iso
+*.jar
+*.rar
+*.tar
+*.zip
+*.pid
+*.ai
+*.psd
+*.log
+*.iml
+.idea/
+.project
+.pydevproject
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Icon?
+ehthumbs.db
+Thumbs.db
+*.sw[op]
+.sass-cache/
+db.sqlite3
+lib64
+perms.sh
+setup.sh
+celerybeat-schedule
+pyvenv.cfg
+bin/
+include/
+lib/
+local/
+man/
+static_collected/
+node_modules/
+celerybeat-schedule.bak
+celerybeat-schedule.dat
+celerybeat-schedule.dir
+.coverage
+db.sqlite3-journal
+
