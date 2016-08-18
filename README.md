@@ -1,3 +1,22 @@
+Scintilla
+===========
+
+Create a managed Chef server at https://manage.chef.io/organizations
+
+Create a Virtual Machine on Azure and install the chef extension.
+
+Point the Virtual Machine to your Chef account.
+
+Create a chef repo and put it in Github.
+
+```
+knife upload cookbooks/<your-cookbook>
+```
+
+Add the recipes you'd like to run to your nodes' run lists at https://manage.chef.io/organizations
+
+
+
 The chef-repo
 ===============
 All installations require a central workspace known as the chef-repo. This is a place where primitive objects--cookbooks, roles, environments, data bags, and chef-repo configuration files--are stored and managed.
