@@ -15,7 +15,22 @@ knife upload cookbooks/<your-cookbook>
 
 Add the recipes you'd like to run to your nodes' run lists at https://manage.chef.io/organizations
 
+ssh into your VM and run
 
+```
+sudo chef-client
+```
+
+With Berkshelf
+================
+
+Create a Berksfile in your app's cookbook folder.
+
+```
+berks install
+
+berks upload
+```
 
 The chef-repo
 ===============
