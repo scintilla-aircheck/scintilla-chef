@@ -1,0 +1,12 @@
+[program:celery]
+command=sudo python3 /var/django/<%= @app_folder %>/manage.py celery worker -B --loglevel=info
+directory=/var/django/<%= @app_folder %>/
+user=<%= @user %>
+autostart=True
+autorestart=True
+redirect_stderr=True
+environment=<%= @supervisor_environment %>
+startsecs=10
+
+; Wait for tasks at shutdown
+stopwaitsecs = 60

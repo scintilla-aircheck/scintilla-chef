@@ -1,7 +1,7 @@
 [program: daphne]
-command=daphne <%= @app_folder %>.asgi:channel_layer --port 80 --bind 0.0.0.0
+command=sudo daphne <%= @app_folder %>.asgi:channel_layer --port <%= @port %> --bind localhost
 directory=/var/django/<%= @app_folder %>/
-user=<%= @app_user %>
+user=<%= @user %>
 autostart=True
 autorestart=True
 redirect_stderr=True

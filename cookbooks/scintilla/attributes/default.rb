@@ -11,3 +11,7 @@ default['gunicorn']['timeout'] = 180
 default['migrate'] = true
 default['poise-python']['install_python2'] = false
 default['poise-python']['install_python3'] = true
+
+default['nginx']['certs'] = "/etc/nginx/certs"
+default['domains'] = [{ 'domain' => 'scintilla-dev.centralus.cloudapp.azure.com', 'key' => 'airqualityhq.key', 'cert' => 'airqualityhq.crt', 'ssl' => false }]
+default['django_port'] = 8000

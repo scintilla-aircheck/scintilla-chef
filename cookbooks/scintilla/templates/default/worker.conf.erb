@@ -1,7 +1,7 @@
 [program: worker]
-command=python3 manage.py runworker
+command=sudo python3 manage.py runworker
 directory=/var/django/<%= @app_folder %>/
-user=<%= @app_user %>
+user=<%= @user %>
 autostart=True
 autorestart=True
 redirect_stderr=True

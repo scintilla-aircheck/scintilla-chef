@@ -1,0 +1,60 @@
+server {
+    # Remove leading www
+    server_name www.<%= @domain['domain'] %>;
+    <% if @domain['ssl'] %>
+    rewrite ^ https://<%= @domain['domain'] %>$request_uri? permanent;
+    <% else %>
+    rewrite ^ $scheme://<%= @domain['domain'] %>$request_uri? permanent;
+    <% end %>
+}
+
+<% if @domain['ssl'] %>
+# https server
+server {
+    listen 443 ssl;
+    server_name <%= @domain['domain'] %>;
+
+    access_log  <%= node[:nginx][:log_dir] %>/<%= @domain['domain'] %>.access.log;
+    error_log  <%= node[:nginx][:log_dir] %>/<%= @domain['domain'] %>.error.log;
+
+    ssl_certificate <%= node[:nginx][:certs] %>/<%= @domain['cert'] %>;
+    ssl_certificate_key <%= node[:nginx][:certs] %>/<%= @domain['key'] %>;
+    ssl_session_cache   shared:<%= @app_name %>:10m;
+    ssl_session_timeout 10m;
+    ssl_protocols TLSv1.2 TLSv1.1 TLSv1;
+
+    location / {
+        include proxy.conf;
+
+        proxy_set_header X-Forwarded-Ssl on;
+        proxy_pass http://<%= @app_name %>;
+    }
+}
+<% end %>
+
+server {
+    server_name <%= @domain['domain'] %>;
+    <% if @domain['ssl'] %>
+    rewrite ^ https://<%= @domain['domain'] %>$request_uri? permanent;
+    <% end %>
+
+    access_log  <%= node[:nginx][:log_dir] %>/<%= @domain['domain'] %>.access.log;
+    error_log  <%= node[:nginx][:log_dir] %>/<%= @domain['domain'] %>.error.log;
+
+    location / {
+        include proxy.conf;
+
+        proxy_pass http://<%= @app_name %>;
+    }
+
+    location /socket {
+        include proxy.conf;
+
+        proxy_pass http://<%= @app_name %>;
+
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+    }
+}
+

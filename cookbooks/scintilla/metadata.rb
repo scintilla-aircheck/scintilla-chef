@@ -11,6 +11,7 @@ depends "apt"
 depends "git"
 depends "poise-python"
 depends "supervisor"
+depends "nginx"
 
 recipe "scintilla", "Installs software for webapps"
 recipe "scintilla::deploy", "Deploys all code bases"
