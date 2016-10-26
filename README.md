@@ -33,6 +33,15 @@ berks install
 berks upload
 ```
 
+```
+cd scintilla-chef/cookbooks/scintilla
+
+berks upload scintilla
+```
+
+If your cookbook is frozen, just update the version in the metadata.rb or use the --force option.
+
+
 The chef-repo
 ===============
 All installations require a central workspace known as the chef-repo. This is a place where primitive objects--cookbooks, roles, environments, data bags, and chef-repo configuration files--are stored and managed.
