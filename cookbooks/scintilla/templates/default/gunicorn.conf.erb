@@ -1,0 +1,8 @@
+[program: <%= @app_name %>]
+command=/var/virtualenvs/<%= @app_name %>/bin/gunicorn <%= @app_name %>.wsgi:application -b 0.0.0.0:80 -p /var/django/<%= @app_name %>.pid -w <%= @gunicorn['workers'] %>  -n <%= @app_name %> -t <%= @gunicorn['timeout'] %> -m <%= @gunicorn['maxrequests'] %> --log-file /var/log/gunicorn.log
+directory=/var/django/<%= @app_folder %>/
+user=<%= @app_user %>
+autostart=True
+autorestart=True
+redirect_stderr=True
+environment=<%= @supervisor_environment %>

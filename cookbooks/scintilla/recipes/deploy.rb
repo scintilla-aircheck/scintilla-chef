@@ -1,143 +1,139 @@
 include_recipe "scintilla::packages"
+include_recipe "git::default"
+include_recipe "supervisor"
 
-def deploy(appname, settings)
-  instance = search("aws_opsworks_instance").first
+environment = data_bag_item('scintilla', 'environment')
+supervisor_environment = environment.map{|k,v| "#{k}=\"#{v}\""}.join(',')
 
-  hostname = instance['hostname']
-  environment = settings[:environment].to_hash
-  supervisor_environment = environment.map{|k,v| "#{k}=\"#{v}\""}.join(',')
-
-  # Make environment settings for ubuntu
-  name = 'ubuntu'
-
-  # make environments directory
-  directory "/home/#{name}/environments" do
-    owner name
-    group "admin"
-    mode "0775"
-  end
-
-  template "/home/#{name}/environments/#{appname}-environment.conf" do
-    source "environment.settings.conf.erb"
-    owner name
-    group "admin"
-    variables(:environment => settings[:environment], :appname => appname)
-  end
-
-  # checkout the branch from repo
-  git "/var/django/#{settings[:folder]}" do
-    repository settings[:repo]
-    reference settings[:branch]
-    user "www-data"
-    group "www-data"
-    action :sync
-  end
-
-  # install/update the requirements for virtualenv
-  bash "installing/updating requirements for #{appname}" do
-    code <<-EOH
-      source /var/virtualenvs/#{appname}/bin/activate
-      cd /var/django/#{settings[:folder]}
-      pip install -r requirements.txt
-    EOH
-  end
-
-  # web - supervisor conf file
-  template "/etc/supervisor.d/#{appname}.conf" do
-    source "web.conf.erb"
-    owner "root"
-    group "opsworks"
-    mode "0775"
-    variables(:appname => appname, :settings => settings, :supervisor_environment => supervisor_environment, :private_ip => instance['private_ip'])
-    notifies :reload, "service[supervisor]", :delayed
-  end
-
-  # if main server - setup celerybeat and sync any static content
-  if [settings[:main_server]].include? hostname then
-    if settings[:celerybeat] then
-      # create the supervisord program entry for celerybeat
-      template "/etc/supervisor.d/#{appname}.celerybeat.conf" do
-        source "celerybeat.conf.erb"
-        variables(:appname => appname, :settings => settings, :supervisor_environment => supervisor_environment)
-        notifies :reload, "service[supervisor]", :delayed
-        owner "root"
-        group "opsworks"
-        mode "0775"
-      end
-    end
-
-    if settings[:environment][:APP_ENV].upcase == "STAGING" || settings[:environment][:APP_ENV].upcase == "PRODUCTION" then
-      bash "syncing static files" do
-        code <<-EOH
-          source /home/ubuntu/environments/#{appname}-environment.conf
-          cd /var/django/#{settings[:folder]}
-          python ./manage.py collectstatic --noinput
-          python ./manage.py sync_s3 --static-only
-        EOH
-      end
-    else
-      bash "syncing static files" do
-        code <<-EOH
-          source /home/ubuntu/environments/#{appname}-environment.conf
-          cd /var/django/#{settings[:folder]}
-          python ./manage.py collectstatic --noinput
-        EOH
-      end
-    end
-  end
-
-  # celery - supervisor conf file
-  template "/etc/supervisor.d/#{appname}.celery.conf" do
-    source "celery.conf.erb"
-    owner "root"
-    group "opsworks"
-    mode "0775"
-    variables(:appname => appname, :settings => settings, :supervisor_environment => supervisor_environment)
-    notifies :reload, "service[supervisor]", :delayed
-  end
-
-  bash "supervisor-update" do
-    code <<-EOH
-      supervisorctl update
-    EOH
-  end
-
-  bash "supervisor-reload-server" do
-    code <<-EOH
-      supervisorctl restart #{appname}
-    EOH
-  end
-
-  # restart webs
-  bash "restarting gunicorn workers" do
-    code <<-EOH
-      if [[ -e /var/django/#{appname}.pid ]]; then
-        sudo kill -HUP `cat /var/django/#{appname}.pid`
-      fi
-    EOH
-  end
-
-  # restart celery workers
-  if settings[:celerybeat] then
-    bash "restarting celery" do
-      code <<-EOH
-        supervisorctl restart #{appname}-worker
-      EOH
-    end
-  end
-
-  # migration
-  if settings[:migrate] then
-    code <<-EOH
-      cd /var/django/#{settings[:folder]}
-      source /home/#{name}/environments/#{appname}-environment.conf
-      python #{settings[:app_folder]}/manage.py migrate
-    EOH
-  end
-
+user node['app_user_and_group'] do
+    action :create
+    shell '/bin/bash'
 end
 
+group node['app_user_and_group'] do
+    action :create
+    members [node['app_user_and_group']]
+end
 
-node[:apps].each do | appname, settings|
-  deploy(appname, settings)
+# django code directory
+directory "/var/django" do
+    owner node['app_user_and_group']
+    group node['app_user_and_group']
+    mode "0775"
+end
+
+# virtualevns
+directory "/var/virtualenvs" do
+    owner node['app_user_and_group']
+    group node['app_user_and_group']
+    mode "0775"
+end
+
+## Make virtual env for the app
+python_virtualenv "/var/virtualenvs/#{node['app_name']}" do
+    action :create
+    user node['app_user_and_group']
+    group node['app_user_and_group']
+end
+
+# make environments directory
+directory "/home/#{node['cloud_user']}/environments" do
+    owner node['cloud_user']
+    group node['cloud_group']
+    mode "0775"
+end
+
+template "/home/#{node['cloud_user']}/environments/#{node['app_name']}-environment.conf" do
+    source "environment.settings.conf.erb"
+    owner node['cloud_user']
+    group node['cloud_group']
+    variables(:environment => environment, :app_name => node['app_name'])
+end
+
+# checkout the branch from repo
+git "/var/django/#{node['app_folder']}" do
+    repository node['app_repo']
+    reference node['app_branch']
+    user node['app_user_and_group']
+    group node['app_user_and_group']
+    action :sync
+end
+
+bash "checking out all submodules" do
+    code <<-EOH
+        cd /var/django/#{node['app_folder']}
+        git submodule init
+        git submodule update
+        EOH
+end
+
+# install/update the requirements for virtualenv
+bash "installing/updating requirements for #{node['app_name']}" do
+    code <<-EOH
+        cd /var/django/#{node['app_folder']}
+        pip3 install -r requirements.txt
+        EOH
+end
+
+# gunicorn - supervisor conf file
+template "/etc/supervisor.d/gunicorn.conf" do
+    source "gunicorn.conf.erb"
+    owner node['cloud_user']
+    group node['cloud_group']
+    mode "0775"
+    variables(:app_name => node['app_name'], :app_folder => node['app_folder'], :app_user => node['app_user_and_group'], :gunicorn => node['gunicorn'], :supervisor_environment => supervisor_environment)
+    notifies :reload, "service[supervisor]", :delayed
+end
+
+# worker - supervisor conf file
+template "/etc/supervisor.d/worker.conf" do
+    source "worker.conf.erb"
+    owner node['cloud_user']
+    group node['cloud_group']
+    mode "0775"
+    variables(:app_name => node['app_name'], :app_folder => node['app_folder'], :app_user => node['app_user_and_group'], :supervisor_environment => supervisor_environment)
+    notifies :reload, "service[supervisor]", :delayed
+end
+
+# daphne - supervisor conf file
+template "/etc/supervisor.d/daphne.conf" do
+    source "daphne.conf.erb"
+    owner node['cloud_user']
+    group node['cloud_group']
+    mode "0775"
+    variables(:app_name => node['app_name'], :app_folder => node['app_folder'], :app_user => node['app_user_and_group'], :supervisor_environment => supervisor_environment)
+    notifies :reload, "service[supervisor]", :delayed
+end
+
+bash "supervisor-update" do
+    code <<-EOH
+        supervisorctl update
+        EOH
+end
+
+bash "supervisor-reload-server" do
+    code <<-EOH
+        supervisorctl restart worker
+        supervisorctl restart daphne
+        EOH
+end
+
+## restart gunicorn workers
+#bash "restarting gunicorn workers" do
+#    code <<-EOH
+#        if [[ -e /var/django/#{node['app_name']}.pid ]]; then
+#            sudo kill -HUP `cat /var/django/#{node['app_name']}.pid`
+#        fi
+#        EOH
+#end
+
+# migration
+if node['migrate'] then
+    bash "migrating" do
+        code <<-EOH
+            cd /var/django/#{node['app_folder']}
+            source /home/#{node['cloud_user']}/environments/#{node['app_name']}-environment.conf
+            python3 manage.py migrate
+            EOH
+    end
 end

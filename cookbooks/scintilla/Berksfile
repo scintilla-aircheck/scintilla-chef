@@ -4,7 +4,7 @@ metadata
 cookbook 'build-essential', '~> 2.4.0'
 cookbook 'apt', '~> 2.9.2'
 cookbook 'sudo', '~> 2.9.0'
-cookbook 'python', '~> 1.4.6'
+cookbook 'poise-python', '~> 1.5.1'
 cookbook 'git', '~> 4.5.0'
 cookbook 'supervisor', '~> 0.4.12'
 cookbook 'nginx', '~> 2.7.6'

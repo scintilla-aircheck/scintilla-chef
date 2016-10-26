@@ -1,0 +1,4 @@
+#source /var/virtualenvs/<%= @app_name %>/bin/activate
+<% @environment.each do |name, value| %>
+export <%= name %>=<%= value %>
+<% end %>

@@ -7,3 +7,4 @@ node_name                "scintilla"
 client_key               "#{current_dir}/scintilla.pem"
 chef_server_url          "https://api.chef.io/organizations/scintilla"
 cookbook_path            ["#{current_dir}/../cookbooks"]
+encrypted_data_bag_secret "#{currrent_dir}/encrypted_data_bag_secret"

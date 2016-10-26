@@ -18,6 +18,7 @@ Add the recipes you'd like to run to your nodes' run lists at https://manage.che
 ssh into your VM and run
 
 ```
+cd /opt/chef/bin/
 sudo chef-client
 ```
 
